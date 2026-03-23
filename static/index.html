@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Wi-Fi Radar</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="bg-shape shape-a"></div>
+    <div class="bg-shape shape-b"></div>
+    <main class="container">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">PAINEL LOCAL</p>
+          <h1>Wi-Fi Radar</h1>
+          <p class="subtitle">
+            Veja todos os dispositivos conectados e gerencie confiança/bloqueio em um só lugar.
+          </p>
+        </div>
+        <div class="actions">
+          <button id="scanButton" class="btn btn-primary">Nova varredura</button>
+          <a class="btn btn-secondary" href="http://192.168.1.254" target="_blank" rel="noreferrer">
+            Abrir roteador
+          </a>
+        </div>
+      </header>
+
+      <section class="stats" id="stats">
+        <article class="stat-card">
+          <p>Total</p>
+          <strong id="totalCount">0</strong>
+        </article>
+        <article class="stat-card">
+          <p>Online</p>
+          <strong id="onlineCount">0</strong>
+        </article>
+        <article class="stat-card">
+          <p>Bloqueados</p>
+          <strong id="blockedCount">0</strong>
+        </article>
+        <article class="stat-card">
+          <p>Confiáveis</p>
+          <strong id="trustedCount">0</strong>
+        </article>
+      </section>
+
+      <section class="toolbar">
+        <input id="searchInput" type="search" placeholder="Buscar por nome, IP ou MAC" />
+        <label class="toggle">
+          <input id="onlineOnly" type="checkbox" />
+          <span>Somente online</span>
+        </label>
+      </section>
+
+      <section class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Status</th>
+              <th>Dispositivo</th>
+              <th>IP</th>
+              <th>MAC</th>
+              <th>Confiável</th>
+              <th>Bloquear</th>
+              <th>Observações</th>
+              <th>Última detecção</th>
+            </tr>
+          </thead>
+          <tbody id="devicesBody"></tbody>
+        </table>
+      </section>
+    </main>
+    <div id="toast" class="toast"></div>
+    <script src="/static/app.js"></script>
+  </body>
+</html>
