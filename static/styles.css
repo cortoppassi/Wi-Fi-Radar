@@ -171,6 +171,65 @@ h1 {
   font-size: 0.92rem;
 }
 
+.router-settings {
+  margin-top: 12px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  padding: 16px;
+}
+
+.router-settings h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.router-subtitle {
+  margin: 6px 0 0;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+
+.router-grid {
+  margin-top: 12px;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(3, minmax(160px, 1fr));
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field span {
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+}
+
+.field input {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: white;
+  font-family: inherit;
+}
+
+.router-actions {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.router-hint {
+  margin: 10px 0 0;
+  color: var(--ink-soft);
+  font-size: 0.86rem;
+}
+
 .table-wrap {
   margin-top: 12px;
   background: var(--panel);
@@ -327,5 +386,9 @@ tbody tr:hover {
   .toolbar {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .router-grid {
+    grid-template-columns: 1fr;
   }
 }

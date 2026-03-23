@@ -21,14 +21,12 @@
           <p class="eyebrow">PAINEL LOCAL</p>
           <h1>Wi-Fi Radar</h1>
           <p class="subtitle">
-            Veja todos os dispositivos conectados e gerencie confiança/bloqueio em um só lugar.
+            Veja todos os dispositivos conectados e gerencie confianca/bloqueio em um so lugar.
           </p>
         </div>
         <div class="actions">
-          <button id="scanButton" class="btn btn-primary">Nova varredura</button>
-          <a class="btn btn-secondary" href="http://192.168.1.254" target="_blank" rel="noreferrer">
-            Abrir roteador
-          </a>
+          <button id="scanButton" class="btn btn-primary" type="button">Nova varredura</button>
+          <button id="routerButton" class="btn btn-secondary" type="button">Abrir roteador</button>
         </div>
       </header>
 
@@ -46,7 +44,7 @@
           <strong id="blockedCount">0</strong>
         </article>
         <article class="stat-card">
-          <p>Confiáveis</p>
+          <p>Confiaveis</p>
           <strong id="trustedCount">0</strong>
         </article>
       </section>
@@ -59,6 +57,36 @@
         </label>
       </section>
 
+      <section class="router-settings">
+        <h2>Acesso ao roteador</h2>
+        <p class="router-subtitle">Salve os dados para abrir o painel com 1 clique.</p>
+        <div class="router-grid">
+          <label class="field">
+            <span>URL do roteador</span>
+            <input id="routerUrlInput" type="url" placeholder="http://192.168.1.254" />
+          </label>
+          <label class="field">
+            <span>Usuario</span>
+            <input id="routerUserInput" type="text" placeholder="userAdmin" autocomplete="username" />
+          </label>
+          <label class="field">
+            <span>Senha</span>
+            <input
+              id="routerPasswordInput"
+              type="password"
+              placeholder="Senha do roteador"
+              autocomplete="current-password"
+            />
+          </label>
+        </div>
+        <div class="router-actions">
+          <button id="saveRouterSettingsButton" class="btn btn-primary" type="button">Salvar acesso</button>
+          <button id="copyRouterUserButton" class="btn btn-secondary" type="button">Copiar usuario</button>
+          <button id="copyRouterPasswordButton" class="btn btn-secondary" type="button">Copiar senha</button>
+        </div>
+        <p id="routerHint" class="router-hint"></p>
+      </section>
+
       <section class="table-wrap">
         <table>
           <thead>
@@ -67,10 +95,10 @@
               <th>Dispositivo</th>
               <th>IP</th>
               <th>MAC</th>
-              <th>Confiável</th>
+              <th>Confiavel</th>
               <th>Bloquear</th>
-              <th>Observações</th>
-              <th>Última detecção</th>
+              <th>Observacoes</th>
+              <th>Ultima deteccao</th>
             </tr>
           </thead>
           <tbody id="devicesBody"></tbody>

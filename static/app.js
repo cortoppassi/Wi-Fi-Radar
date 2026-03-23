@@ -1,5 +1,6 @@
 const bodyEl = document.getElementById("devicesBody");
 const scanButton = document.getElementById("scanButton");
+const routerButton = document.getElementById("routerButton");
 const searchInput = document.getElementById("searchInput");
 const onlineOnly = document.getElementById("onlineOnly");
 const toast = document.getElementById("toast");
@@ -9,8 +10,23 @@ const onlineCount = document.getElementById("onlineCount");
 const blockedCount = document.getElementById("blockedCount");
 const trustedCount = document.getElementById("trustedCount");
 
+const routerUrlInput = document.getElementById("routerUrlInput");
+const routerUserInput = document.getElementById("routerUserInput");
+const routerPasswordInput = document.getElementById("routerPasswordInput");
+const saveRouterSettingsButton = document.getElementById("saveRouterSettingsButton");
+const copyRouterUserButton = document.getElementById("copyRouterUserButton");
+const copyRouterPasswordButton = document.getElementById("copyRouterPasswordButton");
+const routerHint = document.getElementById("routerHint");
+
 let devices = [];
 let saveTimeout = null;
+let routerSettings = {
+  router_url: "http://192.168.1.254",
+  username: "",
+  password: "",
+  open_url: "http://192.168.1.254",
+  uses_embedded_auth_url: false,
+};
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -76,6 +92,26 @@ function renderStats() {
   trustedCount.textContent = String(devices.filter((d) => d.trusted).length);
 }
 
+function getRouterTargetUrl() {
+  return (routerSettings.open_url || routerSettings.router_url || "").trim();
+}
+
+function renderRouterHint() {
+  if (routerSettings.username && routerSettings.password) {
+    routerHint.textContent =
+      "Ao abrir o roteador, o app tenta login automatico (POST de formulario).";
+    return;
+  }
+  routerHint.textContent = "Preencha usuario e senha para tentar abertura com login automatico quando suportado.";
+}
+
+function fillRouterSettingsForm(settings) {
+  routerUrlInput.value = settings.router_url || "";
+  routerUserInput.value = settings.username || "";
+  routerPasswordInput.value = settings.password || "";
+  renderRouterHint();
+}
+
 function renderTable() {
   renderStats();
   const filtered = applyFilters(devices);
@@ -89,7 +125,7 @@ function renderTable() {
     .map((device) => {
       const safeMac = device.mac;
       const label = escapeHtml(deviceLabel(device));
-      const host = escapeHtml(device.hostname || "Hostname não resolvido");
+      const host = escapeHtml(device.hostname || "Hostname nao resolvido");
       const note = escapeHtml(device.note || "");
       const nickname = escapeHtml(device.nickname || "");
       const ip = escapeHtml(device.ip || "-");
@@ -104,7 +140,7 @@ function renderTable() {
               <strong>${label}</strong>
               <small>${host}</small>
               ${device.blocked ? '<span class="pill pill-blocked">Bloqueado</span>' : ""}
-              ${device.trusted ? '<span class="pill pill-trusted">Confiável</span>' : ""}
+              ${device.trusted ? '<span class="pill pill-trusted">Confiavel</span>' : ""}
             </div>
           </td>
           <td class="mono">${ip}</td>
@@ -121,7 +157,7 @@ function renderTable() {
               data-field="note"
               data-mac="${safeMac}"
               type="text"
-              placeholder="Anotação"
+              placeholder="Anotacao"
               value="${note}"
             />
           </td>
@@ -151,6 +187,27 @@ async function refreshDevices() {
   renderTable();
 }
 
+async function loadRouterSettings() {
+  const data = await fetchJson("/api/router-settings");
+  routerSettings = data;
+  fillRouterSettingsForm(data);
+}
+
+async function saveRouterSettings() {
+  const payload = {
+    router_url: routerUrlInput.value.trim(),
+    username: routerUserInput.value.trim(),
+    password: routerPasswordInput.value,
+  };
+  const data = await fetchJson("/api/router-settings", {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+  routerSettings = data;
+  fillRouterSettingsForm(data);
+  showToast("<h3>Acesso salvo</h3><p>Dados do roteador atualizados com sucesso.</p>");
+}
+
 async function runScan(aggressive = true) {
   scanButton.disabled = true;
   scanButton.textContent = "Varrendo...";
@@ -162,12 +219,83 @@ async function runScan(aggressive = true) {
     devices = data.devices;
     renderTable();
     showToast(
-      `<h3>Varredura concluída</h3>
+      `<h3>Varredura concluida</h3>
        <p>${data.scan.online_devices_found} dispositivo(s) online em ${data.scan.subnet}.</p>`
     );
   } finally {
     scanButton.disabled = false;
     scanButton.textContent = "Nova varredura";
+  }
+}
+
+async function copyCredential(value, label) {
+  if (!value) {
+    showToast(`<h3>Nada para copiar</h3><p>Preencha o campo de ${label} primeiro.</p>`);
+    return;
+  }
+  await navigator.clipboard.writeText(value);
+  showToast(`<h3>${label} copiado</h3><p>Valor enviado para a area de transferencia.</p>`);
+}
+
+function submitRouterLoginPost(loginPayload, targetWindowName) {
+  const form = document.createElement("form");
+  form.method = "POST";
+  form.action = loginPayload.login_url;
+  form.target = targetWindowName;
+  form.style.display = "none";
+
+  Object.entries(loginPayload.fields || {}).forEach(([key, value]) => {
+    const input = document.createElement("input");
+    input.type = "hidden";
+    input.name = key;
+    input.value = String(value ?? "");
+    form.appendChild(input);
+  });
+
+  document.body.appendChild(form);
+  form.submit();
+  form.remove();
+}
+
+async function openRouter() {
+  if (!routerSettings.router_url) {
+    await loadRouterSettings();
+  }
+
+  const fallbackUrl = getRouterTargetUrl();
+  if (!fallbackUrl) {
+    showToast("<h3>URL nao configurada</h3><p>Informe a URL do roteador e salve.</p>");
+    return;
+  }
+
+  const targetWindowName = "routerAutoLoginWindow";
+  const popup = window.open("about:blank", targetWindowName);
+  if (!popup) {
+    showToast("<h3>Popup bloqueado</h3><p>Permita popups para abrir e logar no roteador.</p>");
+    return;
+  }
+
+  try {
+    const loginPayload = await fetchJson("/api/router-auto-login", { method: "POST" });
+    if (loginPayload.mode === "form_post" && loginPayload.login_url && loginPayload.fields) {
+      submitRouterLoginPost(loginPayload, targetWindowName);
+      showToast("<h3>Abrindo roteador</h3><p>Tentando login automatico agora.</p>");
+      return;
+    }
+
+    popup.location.href = loginPayload.open_url || fallbackUrl;
+    if (routerSettings.username && routerSettings.password) {
+      showToast(
+        "<h3>Abrindo roteador</h3><p>Este modelo pode exigir formulario proprio; a aba foi aberta com fallback.</p>",
+        11000
+      );
+    }
+  } catch (error) {
+    popup.location.href = fallbackUrl;
+    showToast(
+      `<h3>Abrindo roteador</h3><p>Nao foi possivel preparar login automatico (${escapeHtml(error.message)}). Abrindo em modo normal.</p>`,
+      12000
+    );
   }
 }
 
@@ -183,11 +311,12 @@ async function updateDevice(mac, field, value) {
   renderTable();
 
   if (data.router_help) {
-    const steps = data.router_help.steps.map((s) => `<p>• ${s}</p>`).join("");
+    const steps = data.router_help.steps.map((s) => `<p>- ${escapeHtml(s)}</p>`).join("");
+    const openUrl = escapeHtml(data.router_help.open_url || data.router_help.router_url);
     showToast(
-      `<h3>${data.router_help.title}</h3>
+      `<h3>${escapeHtml(data.router_help.title)}</h3>
        ${steps}
-       <p><a href="${data.router_help.router_url}" target="_blank" rel="noreferrer">Abrir roteador agora</a></p>`,
+       <p><a href="${openUrl}" target="_blank" rel="noreferrer">Abrir roteador agora</a></p>`,
       12000
     );
   }
@@ -229,9 +358,27 @@ bodyEl.addEventListener("input", (event) => {
 });
 
 scanButton.addEventListener("click", () => runScan(true));
+routerButton.addEventListener("click", () => {
+  openRouter().catch((error) => showToast(`<h3>Falha ao abrir</h3><p>${error.message}</p>`));
+});
+saveRouterSettingsButton.addEventListener("click", () => {
+  saveRouterSettings().catch((error) => showToast(`<h3>Falha ao salvar</h3><p>${error.message}</p>`));
+});
+copyRouterUserButton.addEventListener("click", () => {
+  copyCredential(routerUserInput.value.trim(), "Usuario").catch((error) =>
+    showToast(`<h3>Falha ao copiar</h3><p>${error.message}</p>`)
+  );
+});
+copyRouterPasswordButton.addEventListener("click", () => {
+  copyCredential(routerPasswordInput.value, "Senha").catch((error) =>
+    showToast(`<h3>Falha ao copiar</h3><p>${error.message}</p>`)
+  );
+});
+
 searchInput.addEventListener("input", renderTable);
 onlineOnly.addEventListener("change", renderTable);
 
+loadRouterSettings().catch(() => undefined);
 refreshDevices()
   .then(() => runScan(false))
   .catch(() => runScan(true));
